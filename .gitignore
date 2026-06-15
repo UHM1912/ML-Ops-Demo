@@ -167,6 +167,7 @@ cython_debug/
 /mlruns/
 /mlruns_old/
 *.html
+/backend/mlruns/
 
 # Angular build artifacts and dependencies
 /frontend/dist/
