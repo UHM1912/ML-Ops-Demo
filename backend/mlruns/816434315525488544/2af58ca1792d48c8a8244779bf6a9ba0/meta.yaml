@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/DataNeurus%20Training/MLOPs/mlops-project/backend/mlruns/816434315525488544/2af58ca1792d48c8a8244779bf6a9ba0/artifacts
+end_time: 1781433521798
+entry_point_name: ''
+experiment_id: '816434315525488544'
+lifecycle_stage: active
+run_id: 2af58ca1792d48c8a8244779bf6a9ba0
+run_name: valuable-auk-927
+run_uuid: 2af58ca1792d48c8a8244779bf6a9ba0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1781433514886
+status: 4
+tags: []
+user_id: utkar

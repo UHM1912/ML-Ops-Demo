@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/DataNeurus%20Training/MLOPs/mlops-project/backend/mlruns/816434315525488544/c6060f7b09d34e30ae805c6605d59fff/artifacts
+end_time: 1781433493749
+entry_point_name: ''
+experiment_id: '816434315525488544'
+lifecycle_stage: active
+run_id: c6060f7b09d34e30ae805c6605d59fff
+run_name: caring-lamb-424
+run_uuid: c6060f7b09d34e30ae805c6605d59fff
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1781433483942
+status: 4
+tags: []
+user_id: utkar

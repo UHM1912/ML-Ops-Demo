@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mlflow-server:
+    image: python:3.10-slim
+    container_name: mlflow-server
+    working_dir: /mlflow
+    volumes:
+      - ./backend/mlruns:/mlflow/mlruns
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "pip install mlflow==2.14.3 && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/mlruns"
+    restart: always
+
+  web-app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: prediction-service
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    depends_on:
+      - mlflow-server
+    restart: always
+
