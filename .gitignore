@@ -166,7 +166,7 @@ cython_debug/
 # MLflow and Evidently runs/reports
 /mlruns/
 /mlruns_old/
-*.html
+backend/*.html
 /backend/mlruns/
 
 # Angular build artifacts and dependencies

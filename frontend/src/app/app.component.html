@@ -1,0 +1,474 @@
+<!-- Left Sidebar -->
+<div class="sidebar">
+    <div class="logo-container">
+        <div class="logo-icon">M</div>
+        <div>
+            <div class="logo-text">MLOps Center</div>
+            <div style="font-size: 11px; color: var(--text-muted)">Live Control Center</div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs Menu -->
+    <div class="nav-menu">
+        <button class="nav-item" [class.active]="activeTab === 'orchestrator'" (click)="switchTab('orchestrator')">
+            AI Orchestrator
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'tab-mlflow'" (click)="switchTab('tab-mlflow')">
+            MLflow Experiments
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'tab-drift'" (click)="switchTab('tab-drift')">
+            Data Drift Verification
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'tab-cicd'" (click)="switchTab('tab-cicd')">
+            Docker & CI/CD
+        </button>
+    </div>
+
+    <!-- Environment Status Panel -->
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+        <div class="status-header">Environment health</div>
+        <div class="status-list">
+            <div class="status-item">
+                <span>FastAPI Service</span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <span [class]="'status-dot ' + health.api"></span>
+                    <span style="font-weight: 500;">{{ health.apiText }}</span>
+                </span>
+            </div>
+            <div class="status-item">
+                <span>MLflow Server</span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <span [class]="'status-dot ' + health.mlflow"></span>
+                    <span style="font-weight: 500;">{{ health.mlflowText }}</span>
+                </span>
+            </div>
+            <div class="status-item">
+                <span>DVC Storage</span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <span [class]="'status-dot ' + health.dvc"></span>
+                    <span style="font-weight: 500;">{{ health.dvcText }}</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Workspace -->
+<div class="workspace">
+    <div class="header">
+        <div class="header-title">
+            <span *ngIf="activeTab === 'orchestrator'">AI Orchestration Chat</span>
+            <span *ngIf="activeTab === 'tab-mlflow'">MLflow Experimentation & Tracking</span>
+            <span *ngIf="activeTab === 'tab-drift'">Evidently AI Data Drift Report</span>
+            <span *ngIf="activeTab === 'tab-cicd'">Dockerization & CI/CD Pipeline</span>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+            <span>Active model state:</span>
+            <span [ngStyle]="health.modelStyle" style="border: 1px solid; padding: 4px 10px; border-radius: 20px; font-weight: 600;">
+                {{ health.activeModel }}
+            </span>
+        </div>
+    </div>
+
+    <div class="main-content">
+
+        <!-- TAB 1: AI ORCHESTRATOR -->
+        <div *ngIf="activeTab === 'orchestrator'" class="tab-panel active-panel">
+            <div class="orchestrator-grid">
+                <!-- Chat Panel -->
+                <div class="card chat-section">
+                    <div class="card-header">
+                        <div class="card-title">Orchestrator Assistant</div>
+                        <span style="font-size: 12px; color: var(--text-muted); background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color)">Llama 3.1 intent router</span>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <ng-container *ngFor="let msg of chatMessages">
+                            <!-- Message bubble -->
+                            <div [class]="'message-bubble ' + (msg.isUser ? 'user-message' : 'agent-message')">
+                                <div [innerHTML]="msg.text"></div>
+                            </div>
+                            
+                            <!-- Custom training results logger card (not nested in agent bubble) -->
+                            <div *ngIf="msg.systemData && (msg.systemData.action === 'TRAIN' || msg.systemData.action === 'DRIFT' || msg.systemData.action === 'PREDICT')" class="pipeline-log-card">
+                                <div class="log-card-header">
+                                    <div class="log-title">
+                                        <span class="log-dot"></span>
+                                        <span>Pipeline Log: {{ msg.systemData.action }}</span>
+                                    </div>
+                                    <span class="log-status-badge">SUCCESS</span>
+                                </div>
+                                <div class="log-card-body">
+                                    <!-- Format TRAIN details -->
+                                    <div *ngIf="msg.systemData.action === 'TRAIN' && msg.systemData.data.metrics" class="log-metrics-grid">
+                                        <div class="metric-pill">
+                                            <span class="metric-label">Accuracy:</span>
+                                            <span class="metric-val">{{ msg.systemData.data.metrics.accuracy | number:'1.4-4' }}</span>
+                                        </div>
+                                        <div class="metric-pill">
+                                            <span class="metric-label">ROC AUC:</span>
+                                            <span class="metric-val">{{ msg.systemData.data.metrics.roc_auc_score | number:'1.4-4' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Format DRIFT details -->
+                                    <div *ngIf="msg.systemData.action === 'DRIFT' && msg.systemData.data.summary" class="log-metrics-grid">
+                                        <div class="metric-pill" [class.drift-alert]="msg.systemData.data.summary.drift_detected">
+                                            <span class="metric-label">Drift:</span>
+                                            <span class="metric-val">{{ msg.systemData.data.summary.drift_detected ? 'Detected' : 'Clear' }}</span>
+                                        </div>
+                                        <div class="metric-pill">
+                                            <span class="metric-label">Features:</span>
+                                            <span class="metric-val">{{ msg.systemData.data.summary.number_of_drifted_features }} / {{ msg.systemData.data.summary.total_features }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Format PREDICT details -->
+                                    <div *ngIf="msg.systemData.action === 'PREDICT' && msg.systemData.inputs" class="log-predict-inputs">
+                                        <span class="input-tag">Gender: {{ msg.systemData.inputs.Gender }}</span>
+                                        <span class="input-tag">Age: {{ msg.systemData.inputs.Age }} yrs</span>
+                                        <span class="input-tag">Premium: ${{ msg.systemData.inputs.AnnualPremium | number:'1.0-0' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </ng-container>
+                        <div *ngIf="isTyping" class="message-bubble agent-message">
+                            <div class="typing-indicator">
+                                <div class="dot"></div>
+                                <div class="dot"></div>
+                                <div class="dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Command Shortcuts -->
+                    <div class="command-bar">
+                        <button class="cmd-btn" (click)="sendQuickCommand('Run training pipeline')">Retrain Model</button>
+                        <button class="cmd-btn" (click)="sendQuickCommand('Show me latest experiment metrics')">Search MLflow Runs</button>
+                        <button class="cmd-btn" (click)="sendQuickCommand('Check for data drift in production')">Drift Analysis</button>
+                    </div>
+                    <div class="chat-input-row">
+                        <input type="text" class="text-input" [(ngModel)]="chatInput" placeholder="Ask to train model, run drift check, or just chat..." (keydown.enter)="sendMessage()">
+                        <button class="btn" (click)="sendMessage()">Send</button>
+                    </div>
+                </div>
+
+                <!-- Direct Predictions Form -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="card-header">
+                            <div class="card-title">Model Inference Client</div>
+                            <span style="font-size: 12px; color: var(--primary-accent); font-weight: 600;">FastAPI Endpoint</span>
+                        </div>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">
+                            Input details below to run real-time inference on the active model load.
+                        </p>
+                        <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+                            <button type="button" class="cmd-btn" style="font-size: 12px; padding: 6px 12px; font-weight: 500;" (click)="loadSampleProfile('likely')">
+                                Load Profile: Likely (Class 1)
+                            </button>
+                            <button type="button" class="cmd-btn" style="font-size: 12px; padding: 6px 12px; font-weight: 500;" (click)="loadSampleProfile('unlikely')">
+                                Load Profile: Unlikely (Class 0)
+                            </button>
+                        </div>
+                        <form id="prediction-form" class="form-grid" (submit)="runFormPrediction(); $event.preventDefault()">
+                            <div class="form-group">
+                                <label class="form-label">Gender</label>
+                                <select [(ngModel)]="predictionForm.Gender" name="Gender" class="select-input">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Age</label>
+                                <input type="number" [(ngModel)]="predictionForm.Age" name="Age" class="number-input" required min="18" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Annual Premium ($)</label>
+                                <input type="number" [(ngModel)]="predictionForm.AnnualPremium" name="AnnualPremium" class="number-input" step="10.0" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Past Accident</label>
+                                <select [(ngModel)]="predictionForm.PastAccident" name="PastAccident" class="select-input">
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Driving License</label>
+                                <select [(ngModel)]="predictionForm.HasDrivingLicense" name="HasDrivingLicense" class="select-input">
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Has Switched Insurer</label>
+                                <select [(ngModel)]="predictionForm.Switch" name="Switch" class="select-input">
+                                    <option value="0">No</option>
+                                    <option value="1">Yes</option>
+                                    <option value="-1">Unknown</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="grid-column: span 2; margin-top: 10px;">
+                                <button type="submit" class="btn" style="width: 100%; justify-content: center;">Execute Predict API</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Result Display Panel -->
+                    <div *ngIf="predResult.show" style="margin-top: 20px; padding: 16px; border-radius: 12px; background: var(--ml-bg); border: 1px solid var(--ml-border);">
+                        <div style="font-weight: 600; font-size: 14px; color: #115e59; display: flex; justify-content: space-between; align-items: center;">
+                            <span>Prediction Output</span>
+                            <span style="background: rgba(16, 185, 129, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 11px;">200 OK</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 15px; font-weight: 600;" [style.color]="predResult.isError ? '#ef4444' : '#0f766e'">
+                            {{ predResult.text }}
+                        </div>
+                        <div *ngIf="!predResult.isError" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                            Model Decision Class: {{ predResult.class }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: MLFLOW EXPERIMENTATION -->
+        <div *ngIf="activeTab === 'tab-mlflow'" class="tab-panel active-panel">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">MLflow Experiment Logs & Metrics</div>
+                        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Dynamic monitoring of local training runs and accuracy trends.</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span *ngIf="showRefreshSuccess" style="font-size: 13px; color: #0d9488; font-weight: 500; animation: fadeIn 0.2s ease;">
+                            Latest runs loaded
+                        </span>
+                        <button class="btn btn-secondary" [disabled]="refreshingMLflow" (click)="loadMLflowRuns()">
+                            {{ refreshingMLflow ? 'Refreshing...' : 'Refresh Data' }}
+                        </button>
+                        <a href="http://127.0.0.1:5000" target="_blank" class="btn btn-purple">
+                            Open MLflow UI
+                        </a>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-bottom: 24px;">
+                    <div class="card" style="background: #ffffff; border: 1px solid var(--border-color);">
+                        <div style="font-weight: 600; font-size: 14px; color: var(--accent-purple); margin-bottom: 15px;">Model Accuracy & ROC-AUC Trends</div>
+                        <div style="position: relative; height: 200px;">
+                            <canvas id="mlflowChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card" style="background: #ffffff; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; text-align: center;">
+                        <div style="font-size: 40px; color: var(--accent-purple); font-weight: 800; letter-spacing: -1px;">MLflow</div>
+                        <div style="font-weight: 600; font-size: 16px; color: #0f172a;">Local Experiment Logging</div>
+                        <p style="font-size: 13px; color: var(--text-muted); max-width: 320px; line-height: 1.5;">
+                            Tracks hyperparameter config (max_depth, criterion, algorithms) alongside evaluation metrics (Accuracy, ROC AUC, Precision, Recall) on every retraining sequence.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card" style="background: #ffffff; border: 1px solid var(--border-color); padding: 16px; overflow-x: auto;">
+                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 12px; color: var(--text-muted)">Latest Experiment Runs Table</div>
+                    <table class="run-table">
+                        <thead>
+                            <tr>
+                                <th>Run ID</th>
+                                <th>Run Name</th>
+                                <th>Start Time</th>
+                                <th>Parameters</th>
+                                <th>Accuracy</th>
+                                <th>ROC AUC</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="runs.length === 0">
+                                <td colspan="7" style="text-align: center; color: var(--text-muted);">No runs loaded. Click Refresh Data.</td>
+                            </tr>
+                            <tr *ngFor="let run of runs">
+                                <td style="font-family: var(--mono-font); font-size: 12px; color: var(--primary-accent);">{{ run.run_id | slice:0:8 }}</td>
+                                <td>{{ run.run_name || 'Run' }}</td>
+                                <td style="font-size: 13px; color: var(--text-muted);">{{ run.start_time }}</td>
+                                <td style="font-size: 12px; color: var(--text-muted); font-family: var(--mono-font);">{{ formatParams(run.params) }}</td>
+                                <td style="font-weight: 600; color: #0f766e;">{{ run.metrics.accuracy | number:'1.4-4' }}</td>
+                                <td style="font-weight: 600; color: var(--accent-blue);">{{ run.metrics.roc | number:'1.4-4' }}</td>
+                                <td><span style="font-size: 11px; font-weight:600; background: var(--ml-bg); color: #115e59; padding: 2px 6px; border-radius: 4px;">FINISHED</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: EVIDENTLY DRIFT REPORT -->
+        <div *ngIf="activeTab === 'tab-drift'" class="tab-panel active-panel">
+            <div class="kpi-row" style="margin-bottom: 10px;">
+                <div class="kpi-card">
+                    <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Drift Detected</div>
+                    <div [class]="'kpi-value ' + (drift.loaded ? drift.statusClass : '')">{{ drift.status }}</div>
+                </div>
+                <div class="kpi-card">
+                    <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Drifted Features</div>
+                    <div class="kpi-value kpi-yellow">{{ drift.features }}</div>
+                </div>
+                <div class="kpi-card">
+                    <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Share of Drifted Features</div>
+                    <div class="kpi-value">{{ drift.share }}</div>
+                </div>
+                <div class="kpi-card">
+                    <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Features Evaluated</div>
+                    <div class="kpi-value kpi-green">{{ drift.total }}</div>
+                </div>
+            </div>
+
+            <div class="card" style="flex-grow: 1; display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Evidently AI Statistical Drift Analysis</div>
+                        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Compares production datasets distributions against reference validation data to prevent model decay.</div>
+                    </div>
+                    <button class="btn btn-secondary" (click)="triggerDriftCheck()">Analyze Production Drift</button>
+                </div>
+
+                <!-- Embed report directly inside workspace -->
+                <div class="iframe-container" id="iframe-holder">
+                    <div *ngIf="drift.loading" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); text-align: center; gap: 12px; background: rgba(0,0,0,0.01);">
+                        <div class="typing-indicator" style="font-size: 24px; scale: 1.5;">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                        <div style="font-weight: 600; color: #0f172a; margin-top: 10px;">Running Evidently AI Statistical Engine...</div>
+                        <p style="font-size: 13px; max-width: 400px; line-height: 1.5;">Comparing distributions and executing Kolmogorov-Smirnov drift tests...</p>
+                    </div>
+                    <div *ngIf="!drift.loading && !drift.loaded && !drift.error" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); text-align: center; gap: 12px; background: rgba(0,0,0,0.01);">
+                        <span style="font-size: 40px;">📊</span>
+                        <div style="font-weight: 600; color: #0f172a;">Drift Report Unloaded</div>
+                        <p style="font-size: 13px; max-width: 400px; line-height: 1.5;">Click "Analyze Production Drift" to check features drift and display the Evidently interactive report diagrams.</p>
+                    </div>
+                    <div *ngIf="drift.error" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #ef4444; text-align: center; gap: 12px; background: rgba(0,0,0,0.01); padding: 20px;">
+                        <span style="font-size: 32px;">⚠️</span>
+                        <div style="font-weight: 600;">Drift Verification Failed</div>
+                        <p style="font-size: 13px; max-width: 400px; line-height: 1.5; color: var(--text-muted);">{{ drift.error }}</p>
+                    </div>
+                    <iframe *ngIf="drift.loaded" class="report-iframe" src="/static/production_drift.html"></iframe>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- TAB 6: DOCKER & CI/CD -->
+        <div *ngIf="activeTab === 'tab-cicd'" class="tab-panel active-panel">
+            <div class="cicd-grid">
+                <!-- Visual Pipeline Stepper Diagram -->
+                <div class="card pipeline-stepper-panel">
+                    <div class="card-header" style="margin-bottom: 20px;">
+                        <div class="card-title">CI/CD Pipeline Flow</div>
+                    </div>
+                    <div class="stepper-container">
+                        <!-- Step 1: Git Clone & Environment Setup -->
+                        <div class="step-card" [class.step-active]="cicdStep === 1" [class.step-success]="cicdStep > 1">
+                            <div class="step-icon">1</div>
+                            <div class="step-details">
+                                <div class="step-name">1. Environment Setup</div>
+                                <div class="step-desc">Clone Git repository & restore Python environment</div>
+                            </div>
+                            <div class="step-status">
+                                <span class="badge-status"></span>
+                            </div>
+                        </div>
+
+                        <div class="step-line" [class.line-success]="cicdStep > 1"></div>
+
+                        <!-- Step 2: Unit Testing -->
+                        <div class="step-card" [class.step-active]="cicdStep === 2" [class.step-success]="cicdStep > 2">
+                            <div class="step-icon">2</div>
+                            <div class="step-details">
+                                <div class="step-name">2. Run pytest Assertions</div>
+                                <div class="step-desc">Execute dataset checks & data cleaner unit tests</div>
+                            </div>
+                            <div class="step-status">
+                                <span class="badge-status"></span>
+                            </div>
+                        </div>
+
+                        <div class="step-line" [class.line-success]="cicdStep > 2"></div>
+
+                        <!-- Step 3: DVC Checkout Validation -->
+                        <div class="step-card" [class.step-active]="cicdStep === 3" [class.step-success]="cicdStep > 3">
+                            <div class="step-icon">3</div>
+                            <div class="step-details">
+                                <div class="step-name">3. DVC Integrity Check</div>
+                                <div class="step-desc">Verify data version files are indexed & match hashes</div>
+                            </div>
+                            <div class="step-status">
+                                <span class="badge-status"></span>
+                            </div>
+                        </div>
+
+                        <div class="step-line" [class.line-success]="cicdStep > 3"></div>
+
+                        <!-- Step 4: Model Dry-run Build -->
+                        <div class="step-card" [class.step-active]="cicdStep === 4" [class.step-success]="cicdStep > 4">
+                            <div class="step-icon">4</div>
+                            <div class="step-details">
+                                <div class="step-name">4. Dry-run Model Build</div>
+                                <div class="step-desc">Test end-to-end SMOTE training execution & metrics save</div>
+                            </div>
+                            <div class="step-status">
+                                <span class="badge-status"></span>
+                            </div>
+                        </div>
+
+                        <div class="step-line" [class.line-success]="cicdStep > 4"></div>
+
+                        <!-- Step 5: Docker Containerization -->
+                        <div class="step-card" [class.step-active]="cicdStep === 5" [class.step-success]="cicdStep > 5">
+                            <div class="step-icon">5</div>
+                            <div class="step-details">
+                                <div class="step-name">5. Containerize Application</div>
+                                <div class="step-desc">Package the FastAPI app and model into a Docker image</div>
+                            </div>
+                            <div class="step-status">
+                                <span class="badge-status"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive CI/CD Runner Simulator -->
+                <div class="card simulator-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="card-header">
+                            <div class="card-title">CI/CD Runner Simulator</div>
+                            <button class="btn btn-purple" id="cicd-btn" [disabled]="cicdRunning" (click)="runCicdSimulation()">Run CI/CD Pipeline</button>
+                        </div>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">
+                            Simulate the GitHub Actions workflow executing model unit testing, DVC pulling, model build verification, and container packaging.
+                        </p>
+                        
+                        <div class="terminal-window">
+                            <div class="terminal-header">
+                                <div class="terminal-dots">
+                                    <span class="t-dot td-red"></span>
+                                    <span class="t-dot td-yellow"></span>
+                                    <span class="t-dot td-green"></span>
+                                </div>
+                                <span style="font-size: 11px; color: #94a3b8">github-actions-runner (~/workspace)</span>
+                            </div>
+                            <div class="terminal-body" id="cicd-terminal">
+                                <div *ngIf="cicdLogs.length === 0">Click "Run CI/CD Pipeline" button above to initiate workflow checks.</div>
+                                <div *ngFor="let log of cicdLogs">{{ log }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 15px; font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                        In production, this workflow executes automatically on every `git push` to your main branches, verifying the safety, test passes, and build viability before deploying to the prediction cluster.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
