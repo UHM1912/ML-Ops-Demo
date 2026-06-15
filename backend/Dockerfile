@@ -1,3 +1,12 @@
+# Stage 1: Build the frontend Angular application
+FROM node:18-alpine AS frontend-builder
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Create the final Python application image
 FROM python:3.10
 
 WORKDIR /app
@@ -14,11 +23,12 @@ COPY backend/steps/ ./steps/
 COPY backend/models/ ./models/
 COPY backend/data/ ./data/
 
-# Copy compiled Angular browser bundle (from root context)
-COPY frontend/dist/frontend/browser/ ./frontend-dist/
+# Copy compiled Angular browser bundle from the frontend builder stage
+COPY --from=frontend-builder /frontend/dist/frontend/browser/ ./frontend-dist/
 
 # Expose FastAPI server port
 EXPOSE 8000
 
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
 
